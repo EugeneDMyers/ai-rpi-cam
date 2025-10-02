@@ -1,0 +1,32 @@
+AI camera/ IMX500/raspberry pi Zero 2W
+
+(1) Setup TCP/IP-USB using gadget_mode:
+
+	https://github.com/charkster/rpi_gadget_mode/blob/main/README.md
+
+	ip address for the raspberry pi (USB) should be set as 192.168.1.2
+
+(2) building:
+
+	https://www.raspberrypi.com/documentation/computers/camera_software.html
+
+	These instructions are based on  the section titled: “Advanced rpicam-apps/Build libcamera and rpicam-apps”
+	
+	Pre:
+           (1)	(note) If you do this step – you will need to reinstall the imx500 drivers
+                 sudo apt remove --purge rpicam-apps
+	   (2)	sudo apt install -y libcamera-dev libepoxy-dev libjpeg-dev libtiff5-dev libpng-dev libopencv-dev
+	   (3)	sudo apt install libavcodec-dev libavdevice-dev libavformat-dev libswresample-dev
+
+	(no need to build libcamera, unless you want the latest and greatest)
+
+(3) Build rpicam-apps
+
+	(1)	git clone https://github.com/raspberrypi/rpicam-apps.git  --- note pull from KIPR
+	(2)	cd rpicam-apps   -- use kipr name
+	(3)	git checkout   -- library branch name
+	(4)	meson setup build -Denable_libav=enabled -Denable_drm=disabled -Denable_egl=disabled -Denable_qt=disabled -Denable_opencv=enabled -Denable_tflite=disabled -Denable_hailo=disabled -Denable_imx500=true -Ddownload_imx500_models=true
+	(5)	meson compile -C build
+	(6)	sudo meson install -C build
+	(7)	start using this command:  rpicam-kipr --rotation 1-o udp://192.168.1.1:9000 --post-process-file /usr/local/share/rpi-camera-assets/kipr_mobilenet_ssd.json
+
