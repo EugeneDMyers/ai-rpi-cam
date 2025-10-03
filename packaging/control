@@ -1,0 +1,6 @@
+Package: rpicam-apps-kipr
+Version: 1.0.0-bookworm
+Architecture: arm64
+Maintainer: KIPR <info@kipr.org>
+Depends: libopencv-imgcodecs406, libswscale6, libavcodec59
+Description: rpicam-apps with libwallaby interface.
