@@ -4,6 +4,12 @@ Custom build of [rpicam-apps](https://github.com/raspberrypi/rpicam-apps) which 
 
 ## Docker cross-compilation (recommended)
 
+Pull the sysroot with git LFS.
+It is about 1.2G, so this may take a while.
+```
+git lfs pull
+```
+
 Ensure that you have Docker installed and set up for your user.
 Inspect the `build.sh` script to ensure the paths are correct, then run:
 
@@ -25,7 +31,7 @@ sudo apt install ./kipr-camera.deb
 Install build dependencies:
 
 ```bash
-sudo apt install meson libcamera-dev libboost-all-dev libswscale-dev libavcodec-dev libavdevice-dev libexif-dev libjpeg-dev libtiff5-dev libpng-dev libopencv-dev libdrm-dev cmake libexif-dev liblapack-dev libblas-dev libarmadillo-dev
+sudo apt install -y git meson libcamera-dev libboost-all-dev libswscale-dev libavcodec-dev libavdevice-dev libexif-dev libjpeg-dev libtiff5-dev libpng-dev libopencv-dev libdrm-dev cmake libexif-dev liblapack-dev libblas-dev libarmadillo-dev
 ```
 
 Then compile with `meson`:
