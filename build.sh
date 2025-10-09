@@ -4,8 +4,8 @@ docker build -t rpi-aarch64-builder:trixie .
 
 [ -d ./container/sysroot ] || tar -C ./container -xzf ./container/sysroot.tar.gz
 
-SRC="$HOME/Documents/work/camera/ai-rpi-cam"
-OUT="$HOME/Documents/work/camera/ai-rpi-cam/out"
+SRC="$(pwd)"
+OUT="$(pwd)/out"
 mkdir -p "$OUT"
 
 docker run \
