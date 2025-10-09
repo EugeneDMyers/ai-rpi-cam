@@ -15,22 +15,18 @@ RUN rm -rf /var/lib/apt/lists/*
 # Workspace layout inside container
 RUN mkdir -p /work/src /work/out /opt/crossfiles
 
-COPY --chown=root:root ./container/sysroot.tar.gz /opt/sysroot.tar.gz
-RUN tar -C /opt -xf /opt/sysroot.tar.gz && \
-    rm /opt/sysroot.tar.gz
-
 # Meson cross file
-COPY --chown=root:root ./container/rpi-aarch64.ini /opt/crossfiles/rpi-aarch64.ini
+#COPY --chown=root:root ./container/rpi-aarch64.ini /opt/crossfiles/rpi-aarch64.ini
 
 # Compiles using meson
 COPY --chown=root:root ./container/rpi-build.sh /usr/local/bin/rpi-build.sh
 RUN chmod +x /usr/local/bin/rpi-build.sh
 
 # Debian package control file
-COPY --chown=root:root ./packaging/control /opt/control
+#COPY --chown=root:root ./packaging/control /opt/control
 
 # Wrapper script to launch camera app
-COPY --chown=root:root --chmod=555 ./packaging/kipr-camera /opt/kipr-camera
+#COPY --chown=root:root --chmod=555 ./packaging/kipr-camera /opt/kipr-camera
 
 # Default working directory
 WORKDIR /work

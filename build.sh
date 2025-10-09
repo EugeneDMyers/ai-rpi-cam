@@ -1,7 +1,8 @@
 #!/bin/sh
 
-docker build -t rpi-aarch64-builder:bookworm .
-/var/home/tom/Documents/work/camera/ai-rpi-cam
+docker build -t rpi-aarch64-builder:trixie .
+
+[ -d ./container/sysroot ] || tar -C ./container -xzf ./container/sysroot.tar.gz
 
 SRC="$HOME/Documents/work/camera/ai-rpi-cam"
 OUT="$HOME/Documents/work/camera/ai-rpi-cam/out"
@@ -10,5 +11,6 @@ mkdir -p "$OUT"
 docker run \
   -v "$SRC":/work/src \
   -v "$OUT":/work/out \
-  rpi-aarch64-builder:bookworm \
+  --mount type=bind,src=./container/sysroot,dst=/opt/sysroot \
+  rpi-aarch64-builder:trixie \
   bash "rpi-build.sh"
