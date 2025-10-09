@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+UNIT="rpicam-kipr.service"
+
+if [ "${1}" = "configure" ]; then
+    systemctl --system daemon-reload || true
+    systemctl --system enable "${UNIT}" || true
+    systemctl --system start "${UNIT}" || true
+fi
+
+exit 0

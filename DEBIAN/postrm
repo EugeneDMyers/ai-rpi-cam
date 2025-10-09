@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+UNIT="rpicam-kipr.service"
+
+if [ "${1}" = "remove" ]; then
+    systemctl --system disable "${UNIT}" || true
+    systemctl --system daemon-reload || true
+fi
+
+exit 0
