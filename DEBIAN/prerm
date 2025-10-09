@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+UNIT="rpicam-kipr.service"
+
+if [ "${1}" = "remove" ] || [ "${1}" = "deconfigure" ]; then
+    systemctl --system stop "${UNIT}" || true
+fi
+
+exit 0

@@ -1,2 +1,0 @@
-#!/bin/sh
-LD_PRELOAD=/usr/local/lib/librpicam_app.so rpicam-kipr --rotation 1 -o udp://192.168.1.1:9000 --post-process-file /usr/local/share/rpi-camera-assets/kipr_mobilenet_ssd.json
