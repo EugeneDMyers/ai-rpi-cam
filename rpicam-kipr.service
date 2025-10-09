@@ -1,0 +1,13 @@
+[Unit]
+Description=rpicam-kipr
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rpicam-kipr -o udp://192.168.1.1:9000 --post-process-file /usr/share/rpi-camera-assets/kipr_mobilenet_ssd.json -t0
+Restart=on-failure
+Environment="LD_PRELOAD=/usr/lib/librpicam_app.so"
+
+[Install]
+WantedBy=multi-user.target
