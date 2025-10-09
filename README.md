@@ -58,3 +58,9 @@ You can run the `rpicam-kipr` app manually like this:
 ```bash
 LD_PRELOAD=/usr/lib/librpicam_app.so rpicam-kipr -o udp://192.168.1.1:9000 --post-process-file /usr/share/rpi-camera-assets/kipr_mobilenet_ssd.json -t0
 ```
+
+## License
+
+The original rpicam-apps is made available under the simplified [BSD 2-Clause license](https://spdx.org/licenses/BSD-2-Clause.html).
+
+All changes made by KIPR and KIPR volunteers are licensed under the terms of the [GPLv3 License](LICENSE).
