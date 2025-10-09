@@ -7,7 +7,8 @@ OUT_DIR="/work/out"
 BUILD_DIR="${OUT_DIR}/build"
 STAGE_DIR="${OUT_DIR}/stage"
 LOG_DIR="${OUT_DIR}/logs"
-CROSSFILE="/opt/crossfiles/rpi-aarch64.ini"
+CROSSFILE="${SRC_DIR}/container/rpi-aarch64.ini"
+PKG_DIR="${SRC_DIR}/DEBIAN"
 
 mkdir -p "$BUILD_DIR" "$STAGE_DIR" "$LOG_DIR"
 
@@ -30,10 +31,8 @@ export BOOST_LIBRARYDIR="/opt/sysroot/usr/lib/aarch64-linux-gnu"
 
 cd "${SRC_DIR}"
 
-ls -alh /opt
-
 echo "meson setup ${BUILD_DIR} ..."
-meson setup "${BUILD_DIR}" --cross-file "${CROSSFILE}" --buildtype release --prefix /usr/local -Denable_libav=enabled -Denable_drm=disabled -Denable_egl=disabled -Denable_qt=disabled -Denable_opencv=enabled -Denable_tflite=disabled -Denable_hailo=disabled -Denable_imx500=true -Ddownload_imx500_models=true 2>&1 | tee -a "${LOG_FILE}"
+meson setup "${BUILD_DIR}" --cross-file "${CROSSFILE}" --buildtype release --prefix /usr -Denable_libav=enabled -Denable_drm=disabled -Denable_egl=disabled -Denable_qt=disabled -Denable_opencv=enabled -Denable_tflite=disabled -Denable_hailo=disabled -Denable_imx500=true -Ddownload_imx500_models=true 2>&1 | tee -a "${LOG_FILE}"
 
 echo "meson compile ..."
 meson compile -C "${BUILD_DIR}" -v 2>&1 | tee -a "${LOG_FILE}"
@@ -42,10 +41,10 @@ echo "meson install into staging dir ..."
 DESTDIR="${STAGE_DIR}" meson install -C "${BUILD_DIR}" 2>&1 | tee -a "${LOG_FILE}"
 echo "Artifacts staged: ${STAGE_DIR}"
 
-cp /opt/kipr-camera "${STAGE_DIR}/usr/local/bin"
+mkdir -p "${STAGE_DIR}/lib/systemd/system"
+cp "${SRC_DIR}/rpicam-kipr.service" "${STAGE_DIR}/lib/systemd/system"
 
 cd "${STAGE_DIR}"
-mkdir -p "${STAGE_DIR}/DEBIAN"
-cp /opt/control "${STAGE_DIR}/DEBIAN"
+cp -r "${PKG_DIR}" "${STAGE_DIR}/DEBIAN"
 dpkg-deb -b "${STAGE_DIR}"
 mv "${OUT_DIR}/stage.deb" "${OUT_DIR}/rpicam-apps-kipr.deb"
