@@ -64,6 +64,7 @@ bool ObjectDetectDrawCvStage::Process(CompletedRequestPtr &completed_request)
 	libcamera::Span<uint8_t> buffer = w.Get()[0];
 	uint32_t *ptr = (uint32_t *)buffer.data();
 	StreamInfo info = app_->GetStreamInfo(stream_);
+	LOG(2, "Image info: Height " << info.height << " width " << info.width << " " << info.stride);
 
 	std::vector<Detection> detections;
 
@@ -76,6 +77,7 @@ bool ObjectDetectDrawCvStage::Process(CompletedRequestPtr &completed_request)
 	for (auto &detection : detections)
 	{
 		Rect r(detection.box.x, detection.box.y, detection.box.width, detection.box.height);
+		LOG(2, r);
 		rectangle(image, r, colour, line_thickness_);
 		std::stringstream text_stream;
 		text_stream << detection.name << " " << (int)(detection.confidence * 100) << "%";
