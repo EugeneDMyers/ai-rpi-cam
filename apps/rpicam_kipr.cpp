@@ -10,14 +10,19 @@
 #include <signal.h>
 #include <sys/signalfd.h>
 #include <sys/stat.h>
+#include <string>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <arpa/inet.h>
 
 #include "encoder/KIPRnet.hpp"
 #include "core/rpicam_encoder.hpp"
 #include "output/output.hpp"
 
-#include "encoder/PracticalSocket.hpp"
-
-#define AI_VIDEO_COMMAND_PORT "5556"
+#define AI_VIDEO_COMMAND_PORT 5556
 #define MAX_UDP_BUFF_LEN 4096
 
 using namespace std::placeholders;
@@ -25,6 +30,8 @@ using namespace std::placeholders;
 // Some keypress/signal handling.
 
 KIPRnet app;
+
+void HandleTCPClient(int connfd);
 
 static int signal_received;
 static void default_signal_handler(int signal_number)
@@ -122,7 +129,7 @@ static void event_loop(KIPRnet &app)
 			if (timeout)
 				LOG(1, "Halting: reached timeout of " << options->Get().timeout.get<std::chrono::milliseconds>()
 													  << " milliseconds.");
-			cout << "Stopping AI camera interface" << endl; fflush(NULL);
+			LOG(1, "Stopping AI camera interface"); fflush(NULL);
 			app.StopCamera(); // stop complains if encoder very slow to close
 			app.StopEncoder();
 			return;
@@ -145,45 +152,136 @@ std::thread command_thread_;
 void startCommandLoop()
 {
 	command_thread_ = std::thread(&CommandLoop);
-	cout << "Command Loop Thread started" << endl;
-fflush(NULL);
+	LOG(1, "Command Loop Thread started");
 }
 
 void CommandLoop()
 {
-	// receive commands from the wombat
+	int sockfd, connfd;
 
-	unsigned short servPort = atoi(AI_VIDEO_COMMAND_PORT); 
-	cout << "Waiting for command" << endl;
-fflush(NULL);
-		UDPSocket sock(servPort); 
-		char buffer[MAX_UDP_BUFF_LEN]; // receive buffer
-		string sourceAddress;          // addres of source address
-		int recvMsgSize;               // size of received message
-		unsigned short  sourcePort;    // receive port
+	in_addr in_addr_any;
 
-		for(;;)
+	socklen_t len;	
+	struct sockaddr_in servaddr, cli;
+
+	// create the socket
+
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	if(sockfd == -1)
+	{
+		LOG_ERROR("CommandLoop - server socket creation failed");
+		return;
+	}
+
+	bzero(&servaddr, sizeof(servaddr));
+
+	in_addr_any.s_addr = INADDR_ANY;
+
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr = in_addr_any; //htonl(in_addr_any);
+	servaddr.sin_port = htons(AI_VIDEO_COMMAND_PORT);
+
+	if((bind(sockfd, (struct sockaddr*) &servaddr, sizeof(servaddr))) != 0)
+	{
+		LOG_ERROR("CommandLoop - server socket bind failed");
+		perror("CommandLoop - ");
+		return;
+	}
+
+	if((listen(sockfd, 5)) != 0)
+	{
+		LOG_ERROR("CommandLoop - server socket listen failed");
+		perror("CommandLoop - ");
+		return;
+	}
+
+	LOG(1, "command server ready");
+	len = sizeof(cli);
+
+	for (;;)
+	{
+		connfd = accept(sockfd, (struct sockaddr *) &cli, &len);
+		if(connfd < 0)
 		{
-			recvMsgSize = sock.recvFrom(buffer, MAX_UDP_BUFF_LEN, sourceAddress, sourcePort);
-			cout << "Received packet from " << sourceAddress << ":" << sourcePort << endl;;
-
-
-			if(strncmp( buffer, "startvideo", 10) == 0)
-			{
-				int retval;
-				retval = app.set_video_output(1);
-				cout << endl << "******video output started " << retval << endl;
-				fflush(NULL);
-			}
-			if(strncmp( buffer, "stopvideo", 10) == 0)
-			{
-				app.set_video_output(0);
-				cout << "video output stopped" << endl;
-			}
-
-			sock.sendTo(buffer, recvMsgSize, sourceAddress, sourcePort);
-			
+			LOG_ERROR("CommandLoop - server accept failed");
+			perror("CommandLoop - ");
+			continue;
 		}
+
+
+		HandleTCPClient(connfd);
+	}
+}
+
+std::string getForeignAddress(int sockDesc) 
+    {
+  sockaddr_in addr;
+  unsigned int addr_len = sizeof(addr);
+
+  if (getpeername(sockDesc, (sockaddr *) &addr,(socklen_t *) &addr_len) < 0) {
+    LOG_ERROR("Fetch of foreign address failed (getpeername())");
+  }
+  return inet_ntoa(addr.sin_addr);
+}
+
+unsigned short getForeignPort(int sockDesc) {
+  sockaddr_in addr;
+  unsigned int addr_len = sizeof(addr);
+
+  if (getpeername(sockDesc, (sockaddr *) &addr, (socklen_t *) &addr_len) < 0) {
+    LOG_ERROR("Fetch of foreign port failed (getpeername())");
+  }
+  return ntohs(addr.sin_port);
+}
+
+
+void HandleTCPClient(int connfd)
+{
+
+        char buffer[MAX_UDP_BUFF_LEN]; // receive buffer
+	int flag = 1;
+
+	LOG(1, "Handling client: " << getForeignAddress(connfd) << ":" << getForeignPort(connfd) << ":");
+
+	bzero(buffer, MAX_UDP_BUFF_LEN);
+
+	setsockopt(connfd, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
+for(;;)
+{
+
+	if(recv(connfd, buffer, sizeof(buffer) - 1, 0) <= 0)
+	{
+		close(connfd);
+		perror("HandleTCPClient - recv");
+		return;
+	}
+
+	LOG(1, "Received command:" << buffer);
+
+	if(strncmp( buffer, "startvideo", 10) == 0)
+	{
+		int retval;
+		retval = app.set_video_output(1);
+		send(connfd, buffer, strnlen(buffer, MAX_UDP_BUFF_LEN), 0);
+
+		LOG(1, "******video output started " << retval);
+		fflush(NULL);
+	}
+	if(strncmp( buffer, "stopvideo", 10) == 0)
+	{
+		app.set_video_output(0);
+                send(connfd, buffer, strnlen(buffer, MAX_UDP_BUFF_LEN), 0);
+		LOG(1, "video output stopped");
+	}
+	if(strncmp( buffer, "status", 6 ) == 0)
+	{
+		LOG(1, "status requested");
+		send(connfd, "ready", 5, 0);
+		LOG(1, "status ready sent:");
+		fflush(NULL);
+	}
+}
 }
 
 int main(int argc, char *argv[])
